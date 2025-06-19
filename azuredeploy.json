@@ -1,0 +1,147 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerRegistryName": {
+            "type": "string",
+            "defaultValue": "[concat('automlregistry', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Name of the Azure Container Registry"
+            }
+        },
+        "containerInstanceName": {
+            "type": "string",
+            "defaultValue": "automl-container",
+            "metadata": {
+                "description": "Name of the container instance"
+            }
+        },
+        "dnsNameLabel": {
+            "type": "string",
+            "defaultValue": "[concat('automl-app-', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "DNS name label for the container instance"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "cpuCores": {
+            "type": "int",
+            "defaultValue": 2,
+            "metadata": {
+                "description": "Number of CPU cores"
+            }
+        },
+        "memoryInGb": {
+            "type": "int",
+            "defaultValue": 4,
+            "metadata": {
+                "description": "Memory in GB"
+            }
+        }
+    },
+    "variables": {
+        "containerRegistryLoginServer": "[concat(parameters('containerRegistryName'), '.azurecr.io')]",
+        "imageName": "automl-app:latest"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "2021-09-01",
+            "name": "[parameters('containerRegistryName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Basic"
+            },
+            "properties": {
+                "adminUserEnabled": true
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2021-09-01",
+            "name": "[parameters('containerInstanceName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]"
+            ],
+            "properties": {
+                "containers": [
+                    {
+                        "name": "automl-app",
+                        "properties": {
+                            "image": "[concat(variables('containerRegistryLoginServer'), '/', variables('imageName'))]",
+                            "ports": [
+                                {
+                                    "port": 8501,
+                                    "protocol": "TCP"
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "STREAMLIT_SERVER_PORT",
+                                    "value": "8501"
+                                },
+                                {
+                                    "name": "STREAMLIT_SERVER_ADDRESS",
+                                    "value": "0.0.0.0"
+                                },
+                                {
+                                    "name": "STREAMLIT_SERVER_HEADLESS",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "STREAMLIT_BROWSER_GATHER_USAGE_STATS",
+                                    "value": "false"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": "[parameters('cpuCores')]",
+                                    "memoryInGB": "[parameters('memoryInGb')]"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "port": 8501,
+                            "protocol": "TCP"
+                        }
+                    ],
+                    "dnsNameLabel": "[parameters('dnsNameLabel')]"
+                },
+                "imageRegistryCredentials": [
+                    {
+                        "server": "[variables('containerRegistryLoginServer')]",
+                        "username": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), '2021-09-01').username]",
+                        "password": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName')), '2021-09-01').passwords[0].value]"
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "applicationUrl": {
+            "type": "string",
+            "value": "[concat('http://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('containerInstanceName'))).ipAddress.fqdn, ':8501')]"
+        },
+        "containerRegistryName": {
+            "type": "string",
+            "value": "[parameters('containerRegistryName')]"
+        },
+        "containerRegistryLoginServer": {
+            "type": "string",
+            "value": "[variables('containerRegistryLoginServer')]"
+        }
+    }
+} 
