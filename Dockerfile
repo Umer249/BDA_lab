@@ -16,14 +16,14 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Copy project files
+COPY . /app/
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Set working directory to the app's source folder
+WORKDIR /app/src
 
-# Copy application code
-COPY . .
+# Install Python dependencies from the root requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Create necessary directories
 RUN mkdir -p models reports data
@@ -34,5 +34,5 @@ EXPOSE 8501
 # Health check
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-# Set the default command to run the Streamlit app
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.fileWatcherType=none", "--browser.gatherUsageStats=false"] 
+# Set the default command to run the Streamlit app from the parent directory
+CMD ["streamlit", "run", "/app/app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.fileWatcherType=none", "--browser.gatherUsageStats=false"] 
