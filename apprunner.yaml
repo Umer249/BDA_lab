@@ -1,0 +1,27 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - pip install -r requirements.txt
+run:
+  runtime-version: 3.9
+  command: streamlit run app.py
+  network:
+    port: 8501
+    protocol: TCP
+  env:
+    - name: STREAMLIT_SERVER_PORT
+      value: 8501
+    - name: STREAMLIT_SERVER_ADDRESS
+      value: 0.0.0.0
+    - name: STREAMLIT_SERVER_HEADLESS
+      value: true
+    - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+      value: false
+  configuration:
+    start-command: streamlit run app.py
+    protocols:
+      - HTTP
+      - HTTPS
+      - WebSocket
