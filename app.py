@@ -3,17 +3,18 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import os
+import sys
 import warnings
 warnings.filterwarnings('ignore')
 
-# Add src to path - This is no longer needed with the updated Dockerfile
-# sys.path.append('src')
+# Add src to path
+sys.path.append('src')
 
-from src.data_preprocessing import DataPreprocessor
-from src.automl_engine import AutoMLEngine
-from src.model_manager import ModelManager
-from src.report_generator import ReportGenerator
-from src.financial_data import FinancialDataFetcher
+from data_preprocessing import DataPreprocessor
+from automl_engine import AutoMLEngine
+from model_manager import ModelManager
+from report_generator import ReportGenerator
+from financial_data import FinancialDataFetcher
 
 # Page config
 st.set_page_config(
