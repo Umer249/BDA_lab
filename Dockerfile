@@ -16,22 +16,16 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY . /app/
-
-# Set working directory to the app's source folder
-WORKDIR /app/src
-
 # Copy requirements first for better caching
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the rest of the application code
 COPY . .
 
-# Create necessary directories
+# Create necessary directories in case they don't exist
 RUN mkdir -p models reports data
 
 # Expose Streamlit default port
@@ -40,5 +34,5 @@ EXPOSE 8501
 # Health check
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
-# Set the default command to run the Streamlit app
+# Set the default command to run the Streamlit app, with WebSocket compression disabled
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0", "--server.headless=true", "--server.enableWebsocketCompression=false"] 
